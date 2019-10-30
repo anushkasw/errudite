@@ -24,6 +24,18 @@ except:
 
 from .ling_consts import STOP_WORDS_semantic as STOP_WORDS
 
+
+class NoOpTokenizer(object):
+    def __init__(self, vocab):
+        self.vocab = vocab
+
+    def __call__(self, text):
+        words = text
+        # All tokens 'own' a subsequent space character in this tokenizer
+        spaces = [True] * len(words)
+        return Doc(self.vocab, words=words, spaces=spaces)
+
+
 class WhitespaceTokenizer(object):
     def __init__(self, vocab):
         self.vocab = vocab
@@ -34,6 +46,7 @@ class WhitespaceTokenizer(object):
         spaces = [True] * len(words)
         return Doc(self.vocab, words=words, spaces=spaces)
 
+
 class SpacyAnnotator(object):
     """Annotator based on spacy.io
     
@@ -43,15 +56,19 @@ class SpacyAnnotator(object):
     """
 
     # if should disable certain steps: ['parser', 'ner', 'textcat']
-    def __init__(self, 
-        disable: List[str]=[], 
-        use_whitespace: bool=False,
-        lang: str='en_core_web_sm'): # en_coref_sm
+    def __init__(self,
+                 disable: List[str] = None,
+                 pre_tokenized: bool = False,
+                 use_whitespace: bool = False,
+                 lang: str = "en_core_web_sm"):  # en_coref_sm
+        disable = disable or []
         self.model = SpacyAnnotator.load_lang_model(lang, disable=disable)
         self.load()
         if use_whitespace:
             self.model.tokenizer = WhitespaceTokenizer(self.model.vocab)
-    
+        if pre_tokenized:
+            self.model.tokenizer = NoOpTokenizer(self.model.vocab)
+
     def dump(self):
         dump_caches(build_cached_path('vocab.pkl'),  self.model.vocab.to_bytes())
 

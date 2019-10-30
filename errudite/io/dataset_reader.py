@@ -1,9 +1,12 @@
 from typing import Iterable, Iterator, Callable, List, Tuple, Dict, Union
+
 import os
+import logging
 import glob
 import itertools
-from spacy.tokens import Span
+
 import numpy as np
+from spacy.tokens import Span
 from collections import Counter, defaultdict
 from tqdm import tqdm
 from ..utils import Registrable, convert_list, ConfigurationError, \
@@ -13,8 +16,8 @@ from ..processor import spacy_annotator, SpacyAnnotator, get_token_feature, VBs,
 from ..targets.label import Label
 from ..targets.interfaces import PatternCoverMeta
 
-import logging
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class DatasetReader(Registrable):
     """
@@ -51,8 +54,8 @@ class DatasetReader(Registrable):
         Set the cache folder path, by default None. If not given, the default is ``./caches/``.
         
     """
-    def __init__(self, cache_folder_path: str=None):
-        if cache_folder_path: 
+    def __init__(self, cache_folder_path: str = None):
+        if cache_folder_path:
             set_cache_folder(cache_folder_path)
         else:
             set_cache_folder(CACHE_FOLDERS["cache"])
@@ -84,7 +87,7 @@ class DatasetReader(Registrable):
             instances = [instance for instance in tqdm(instances)]
         if not instances:
             raise ConfigurationError("No instances were read from the given filepath {}. "
-                                    "Is the path correct?".format(file_path))
+                                     "Is the path correct?".format(file_path))
         return instances
 
     def _read(self, file_path: str, lazy: bool, sample_size: int) -> List[Instance]:
