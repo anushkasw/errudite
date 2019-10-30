@@ -1,11 +1,12 @@
-import os
+import glob, os
 import sys
 sys.path.append('..')
 sys.path.append('../..')
 sys.path.append(os.path.abspath(os.path.expanduser('~/Desktop/sourcetree/errudite/')))
-from tqdm import tqdm
-import pandas as pd
 
+
+import pandas as pd
+from tqdm import tqdm
 import errudite
 from errudite.io import DatasetReader
 from errudite.predictors import Predictor
@@ -17,28 +18,26 @@ import logging
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 if __name__ == "__main__":
-    sample_size = 10570
-    DATASET_FOLDER = normalize_file_path("~/datasets/raw_data/squad/")
-    MODEL_FOLDER = normalize_file_path("~/datasets/models/bidaf/")
-    reader = DatasetReader.by_name("squad")(cache_folder_path=f"~/datasets/caches/error_analysis/squad-{sample_size}")
+    sample_size = None
+    DATASET_FOLDER = normalize_file_path("~/datasets/raw_data/mrqa/")
+    MODEL_FOLDER = normalize_file_path("~/datasets/models/mrqa/")
 
-    instances = reader.read(
-        os.path.join(DATASET_FOLDER, "dev-v1.1.json"),
-        sample_size=sample_size)
-    reader.dump(instances)
-    Label.set_task_evaluator(accuracy_score, task_primary_metric='accuracy')
+    in_domain_dir = os.path.join(DATASET_FOLDER, "in_domain_devs")
+    out_domain_dir = os.path.join(DATASET_FOLDER, "out_of_domain_devs")
 
-    bidaf = Predictor.by_name("bidaf")(
-        name='bidaf', 
-        description='Pretrained model from Allennlp, for the BiDAF model (QA)',
-        model_online_path="https://s3-us-west-2.amazonaws.com/allennlp/models/bidaf-model-2017.09.15-charpad.tar.gz")
-    """
-    bidaf_elmo = Predictor.by_name("bidaf")(
-        name='bidaf_elmo', 
-        description='Pretrained model from Allennlp, for the BiDAF model (QA), with the elmo embedding.',
-        model_path=os.path.join(MODEL_FOLDER, "elmo", "model.tar.gz"))
-    """
-    predictors = { p.name: p for p in [bidaf] }
+    sample_name = sample_size if sample_size else "dev"
+    file_paths = ",".join(glob.glob(os.path.join(in_domain_dir, "*.jsonl.gz")))
+    file_paths += "," + ",".join(glob.glob(os.path.join(out_domain_dir, "*.jsonl.gz")))
+
+    reader = DatasetReader.by_name("mrqa")(
+        cache_folder_path=f"~/datasets/caches/dataset_debug/mrqa-{sample_name}")
+    instances = reader.read(file_paths, sample_size=sample_size)
+
+    predictor = Predictor.by_name("mrqa")(
+        name="mrqa_path", 
+        model_path=os.path.join(MODEL_FOLDER, "mrqa_bert_base.gz"))
+    
+    predictors = { p.name: p for p in [predictor] }
     predictions = { p: [] for p in predictors }
     logger.info("Running predictions....")
     for instance in tqdm(instances):
@@ -56,6 +55,10 @@ if __name__ == "__main__":
         predictor.evaluate_performance(instances)
     print(pd.DataFrame([ {"predictor": p.name, "f1": p.perform["f1"] } for p in predictors.values() ]))
     Instance.build_instance_hashes(instances)
-    reader.count_vocab_freq(os.path.join(DATASET_FOLDER, "train-v1.1.json"))
+
+    TRAIN_DATASET_FOLDER = normalize_file_path("~/datasets/raw_data/mrqa/trains")
+    file_path = ",".join(glob.glob(os.path.join(TRAIN_DATASET_FOLDER, "*.jsonl.gz")))
+    reader.count_vocab_freq(file_path)
     reader.compute_ling_perform_dict(list(Instance.instance_hash.values()))
     reader.dump_preprocessed()
+
