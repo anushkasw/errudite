@@ -1,24 +1,27 @@
+from typing import Dict, List, Tuple, Callable, Union, TypeVar
+
+import logging
 import math
 import numbers
 import os
-import numpy as np
 import datetime
 import random
+from collections import defaultdict
+from itertools import groupby
+
+import numpy as np
 import altair as alt
 import pandas as pd
 
-from typing import Dict, List, Tuple, Callable, Union, TypeVar
-from collections import defaultdict
-from itertools import groupby
 from .built_block import BuiltBlock
 from ..targets.instance import Instance
 from ..targets.interfaces import InstanceKey, UNREWRITTEN_RID
 from ..utils import DSLValueError, ConfigurationError, load_json, CACHE_FOLDERS, normalize_file_path
 
-import logging
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 T = TypeVar('T')
+
 
 class Attribute(BuiltBlock):
     """
@@ -33,16 +36,17 @@ class Attribute(BuiltBlock):
     def __init__(self, name: str, description: str, cmd: Union[str, Callable]):
         BuiltBlock.__init__(self, name, description, cmd)
         try:
-            self.set_cmd(cmd, 'attr')
+            self.set_cmd(cmd, "attr")
         except Exception as e:
             raise(e)
-        self.dtype = ''
+        self.dtype = ""
 
-    def _transfer_data_group(self, 
-        instance_group: Instance, include_fake_val: bool=True) -> Dict[str, Instance]:
+    def _transfer_data_group(self,
+                             instance_group: Instance,
+                             include_fake_val: bool = True) -> Dict[str, Instance]:
         """
         Transfer instance to instance group.
-        
+
         Parameters
         ----------
         instance_group : Union[Instance, Dict[str, Instance]],
@@ -51,7 +55,7 @@ class Attribute(BuiltBlock):
         include_fake_val : bool, optional
             By default True. If true, pretend the rewritten instance is also an
             unrewritten instance, so to extract the attribute.
-        
+
         Returns
         -------
         Dict[str, Instance]
@@ -63,12 +67,12 @@ class Attribute(BuiltBlock):
             else:
                 instance_group = { instance_group.rid : instance_group  }
         return instance_group
-    
-    def test_one_instance(self, 
-        instance_group: Union[Instance, Dict[str, Instance]],
-        attr_hash: Dict[str, 'Attribute']=None, 
-        group_hash: Dict[str, 'Group']=None, 
-        include_fake_val: bool=True) -> T:
+
+    def test_one_instance(self,
+                          instance_group: Union[Instance, Dict[str, Instance]],
+                          attr_hash: Dict[str, 'Attribute'] = None,
+                          group_hash: Dict[str, 'Group'] = None,
+                          include_fake_val: bool=True) -> T:
         """Test and get the attribute of one instance.
         
         Parameters
@@ -104,7 +108,6 @@ class Attribute(BuiltBlock):
         if not instance_group:
             return None
         instance_group = self._transfer_data_group(instance_group, include_fake_val)
-        #print(instance_group)
         exist_key = self.get_existing_instance_key(instance_group, self.instance_dict)
         if exist_key:
             return self.instance_dict[exist_key]
@@ -112,9 +115,8 @@ class Attribute(BuiltBlock):
             [instance_group], 
             attr_hash=attr_hash, 
             group_hash=group_hash)
-        #print(data)
         exist_key = self.get_existing_instance_key(instance_group, data)
-        if  not exist_key:
+        if not exist_key:
             return None
         return data[exist_key]
 
@@ -265,7 +267,8 @@ class Attribute(BuiltBlock):
         instance_hash_rewritten: Dict[InstanceKey, Instance]={},
         filtered_instances: List[InstanceKey]=None,
         model: str=None,
-        normalize: bool=False):
+        normalize: bool=False,
+        sort_by: str = None):
         """
         Visualize the attribute distribution. 
         The visualization is a histogram that displays the relative frequency 
@@ -320,13 +323,14 @@ class Attribute(BuiltBlock):
         stack = "normalize" if normalize else "zero"
         for correctness in data["counts"]:
             for value, count in data["counts"][correctness]:
-                if sorted_list and sorted_list.index(value) >= 15:
-                    continue
+                # if sorted_list and sorted_list.index(value) >= 15:
+                #     continue
                 compute_domain.append({self.name: value, "count": count, "correctness": correctness})
         df = pd.DataFrame(compute_domain)
+
         chart = alt.Chart(df).mark_bar().encode(
             y=alt.Y('count:Q', stack=stack),
-            x=alt.X(f'{self.name}:{dtype}', bin=bin),
+            x=alt.X(f'{self.name}:{dtype}', bin=bin, sort=sorted(df[self.name].values)),
             color=alt.Color('correctness:N', scale=alt.Scale(domain=["correct", "incorrect"])),
             tooltip=[f'{self.name}:{dtype}', 'count:Q', 'correctness:N']
         ).properties(height=100, title=f'{self.name} on {model}')#.configure_facet(spacing=5)#
@@ -433,7 +437,7 @@ class Attribute(BuiltBlock):
             return outliers
 
 
-    def discretize (self) -> List[T]:
+    def discretize(self) -> List[T]:
         """
         A postprocessing process to bin the continuous data into categorical.
         If it's categorical already, just return the values as-is.
@@ -508,19 +512,18 @@ class Attribute(BuiltBlock):
             raw['cmd'] if "cmd" in raw else None)
 
     @staticmethod 
-    def create(
-        name: str, 
-        description: str, 
-        cmd: Union[str, Callable],
-        qid_hash: Dict[str, List[InstanceKey]]={},
-        instance_hash: Dict[InstanceKey, Instance]={},
-        instance_hash_rewritten: Dict[InstanceKey, Instance]={},
-        save: bool=True,
-        test_size: int=None,
-        attr_hash: Dict[str, 'Group']={},
-        group_hash: Dict[str, 'Group']={},
-        force_recompute: bool=False,
-        sample_list: List[InstanceKey]=None) -> 'Attribute':
+    def create(name: str, 
+               description: str, 
+               cmd: Union[str, Callable],
+               qid_hash: Dict[str, List[InstanceKey]]={},
+               instance_hash: Dict[InstanceKey, Instance]={},
+               instance_hash_rewritten: Dict[InstanceKey, Instance]={},
+               save: bool=True,
+               test_size: int=None,
+               attr_hash: Dict[str, 'Group']={},
+               group_hash: Dict[str, 'Group']={},
+               force_recompute: bool=False,
+               sample_list: List[InstanceKey]=None) -> 'Attribute':
         """
         Create an attribute object, and extract the actual attribute
         values from instances, and save them to ``attr.instance_dict.``
@@ -579,7 +582,7 @@ class Attribute(BuiltBlock):
 
         recompute_instance = True
         if not cmd:
-                raise(ConfigurationError("No cmd given to attribute creation."))
+            raise(ConfigurationError("No cmd given to attribute creation."))
         attr = Attribute(name, description, cmd=cmd)
         # see if there is an existing group
         if not sample_list:

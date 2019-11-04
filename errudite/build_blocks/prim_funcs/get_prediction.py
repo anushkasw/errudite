@@ -13,7 +13,7 @@ from ..prim_func import PrimFunc
 def prediction(model: str, predictions: Union['Label', List['Label']]) -> 'Label':
     """
     Get the prediction object of a given model.
-    
+
     Parameters
     ----------
     model : str
@@ -21,7 +21,7 @@ def prediction(model: str, predictions: Union['Label', List['Label']]) -> 'Label
     predictions : Union[Label, List[Label]]
         All the predictions available.
         *Automatically filled in when using the DSL parser.*
-        
+
     Returns
     -------
     Label
@@ -35,7 +35,7 @@ def prediction(model: str, predictions: Union['Label', List['Label']]) -> 'Label
             raise DSLValueError(f"No valid model to [ prediction ]. model: {model}")
         if not predictions:
             raise DSLValueError(f"No prediction input to [ prediction ]. predictions: {predictions}")
-        predictions = [ p for p in convert_list(predictions) if p.model == model ]
+        predictions = [p for p in convert_list(predictions) if p.model == model]
         if not predictions:
             raise DSLValueError(f"Cannot find [ model: {model} ]'s predictions for [ prediction ].")
         output = predictions[0]

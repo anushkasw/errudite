@@ -380,4 +380,3 @@ class DatasetReader(Registrable):
         logger.info("Computing the final distribution...")
         Instance.ling_perform_dict = self._stats_of_info(info_idxes, total_size, err_sizes)
         #dump_caches(info_idxes_out, CACHE_FOLDERS["cache"] + 'feature_perform_idx.pkl')
-

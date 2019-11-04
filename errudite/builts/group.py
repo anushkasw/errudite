@@ -3,7 +3,7 @@ import altair as alt
 import pandas as pd
 import os
 import random
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any
 import datetime
 import itertools
 from .built_block import BuiltBlock
@@ -13,6 +13,7 @@ from ..utils import DSLValueError, ConfigurationError, load_json, CACHE_FOLDERS,
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class Group(BuiltBlock):
     """
@@ -25,11 +26,11 @@ class Group(BuiltBlock):
             self.set_cmd(cmd, 'group')
         except Exception as e:
             raise(e)
-    
+
     def test_one_instance(self,
-        instance_group: Union[Instance, Dict[str, Instance]],
-        attr_hash: Dict[str, 'Attribute']=None, 
-        group_hash: Dict[str, 'Group']=None) -> bool:
+                          instance_group: Union[Instance, Dict[str, Instance]],
+                          attr_hash: Dict[str, 'Attribute']=None, 
+                          group_hash: Dict[str, 'Group']=None) -> bool:
         """Test and see if an instance belongs to the group.
         
         Parameters
@@ -61,7 +62,7 @@ class Group(BuiltBlock):
         data = self.bbw.test_instances(
             [instance_group], attr_hash=attr_hash, group_hash=group_hash)
         return self.get_existing_instance_key(instance_group, data) is not None
-    
+
     def print_stats(self, instances: List[Instance], time_t):
         # print the info
         instance_hash = { i.key(): i for i in  instances }
@@ -84,10 +85,10 @@ class Group(BuiltBlock):
             print(instance_hash[self.get_instance_list()[0]])
 
     def set_instances(self, 
-        cmd: str, 
-        instance_groups: List[Union[Instance, Dict[str, Instance]]],
-        attr_hash: Dict[str, 'Attribute']=None, 
-        group_hash: Dict[str, 'Group']=None) -> None:
+                      cmd: str, 
+                      instance_groups: List[Union[Instance, Dict[str, Instance]]],
+                      attr_hash: Dict[str, 'Attribute']=None, 
+                      group_hash: Dict[str, 'Group']=None) -> None:
         """
         Test the filter on a list of instances, and save the ones that 
         belong to the group to ``self.instance_dict``: Dict[InstanceKey, True].
@@ -134,20 +135,20 @@ class Group(BuiltBlock):
     def get_instance_list(self) -> List[InstanceKey]:
         """Get the list of keys for the instances that 
         are in the group.
-        
+
         Returns
         -------
         List[InstanceKey]
             The instance key list.
         """
         return list(self.instance_dict.keys())
-    
+
     def show_instances(self,
         instance_hash: Dict[InstanceKey, Instance]={},
         instance_hash_rewritten: Dict[InstanceKey, Instance]={},
         filtered_instances: List[InstanceKey]=None) -> None:
         """Print the instances that are in the group.
-        
+
         Parameters
         ----------
         instance_hash : Dict[InstanceKey, Instance]
@@ -161,14 +162,14 @@ class Group(BuiltBlock):
         filtered_instances : List[InstanceKey], optional
             A selected list of instances. If given, only display the distribution
             of the selected instances, by default None
-        
+
         Returns
         -------
         None
         """
         instance_hash = instance_hash or Instance.instance_hash
         instance_hash_rewritten = instance_hash_rewritten or Instance.instance_hash_rewritten
-        
+
         if not filtered_instances:
             filtered_instances = self.get_instances()
         else:
@@ -218,18 +219,19 @@ class Group(BuiltBlock):
             'stats': stats['stats']
         }
     
-    def visualize_models(self, 
-        instance_hash: Dict[InstanceKey, Instance]={},
-        instance_hash_rewritten: Dict[InstanceKey, Instance]={},
-        filtered_instances: List[InstanceKey]=None,
-        models: List[str]=[]):
+    def visualize_models(self,
+                         instance_hash: Dict[InstanceKey, Instance] = None,
+                         instance_hash_rewritten: Dict[InstanceKey, Instance] = None,
+                         filtered_instances: List[InstanceKey] = None,
+                         models: List[str] = None,
+                         altair_args: Dict[str, Any] = None):
         """
-        Visualize the group distribution. 
+        Visualize the group distribution.
         It's a one-bar histogram that displays the count of instances in the group, and
         the proportion of incorrect predictions.
         Because of the incorrect prediction proportion, this historgram is different
-        for each different model. 
-        
+        for each different model.
+
         Parameters
         ----------
         instance_hash : Dict[InstanceKey, Instance]
@@ -246,18 +248,21 @@ class Group(BuiltBlock):
         models : List[str], optional
             A list of instances, with the bars for each group concated vertically.
             By default []. If [], resolve to ``[ Instance.model ]``.
-        
+
         Returns
         -------
         alt.Chart
-            An altair chart object. 
+            An altair chart object.
         """
+        filtered_instances = filtered_instances or []
+        altair_args = altair_args or {"width": 200, "height": 100}
+
         instance_hash = instance_hash or Instance.instance_hash
         instance_hash_rewritten = instance_hash_rewritten or Instance.instance_hash_rewritten
         models = models or [ Instance.resolve_default_model(None) ]
         output = []
         for model in models:
-            #Instance.set_default_model(model=model)
+            Instance.set_default_model(model=model)
             data = self.serialize(instance_hash, instance_hash_rewritten, filtered_instances, model)
             for correctness, count in data["counts"].items():
                 output.append({
@@ -265,14 +270,14 @@ class Group(BuiltBlock):
                     "count": count,
                     "model": model
                 })
-        
+
         df = pd.DataFrame(output)
         chart = alt.Chart(df).mark_bar().encode(
             y=alt.Y('model:N'),
             x=alt.X('count:Q', stack="zero"),
             color=alt.Color('correctness:N', scale=alt.Scale(domain=["correct", "incorrect"])),
             tooltip=['model:N', 'count:Q', 'correctness:N']
-        ).properties(width=100)#.configure_facet(spacing=5)#
+        ).properties(**altair_args)#.configure_facet(spacing=5)#
         return chart
     """
     @classmethod
@@ -357,7 +362,7 @@ class Group(BuiltBlock):
                 'global_error_rate': count_incorrect / TOTAL_SIZE
             }
         }
-    
+
     @classmethod
     def eval_slice_model_compare(cls, 
         models: List[str],

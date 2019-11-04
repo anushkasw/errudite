@@ -86,24 +86,24 @@ def LABEL(target: 'Label') -> str:
         #pass
         return output
 
-def linguistic(
-    spans: Union['Target', Span], 
-    label: str='lemma', 
-    pattern: Union[str, List[str]]=None,
-    get_root: bool=False,
-    get_most_common: bool=False) -> Union[str, List[str]]:
+
+def linguistic(spans: Union["Target", Span],
+               label: str = "lemma",
+               pattern: Union[str, List[str]] = None,
+               get_root: bool = False,
+               get_most_common: bool = False) -> Union[str, List[str]]:
     """
     Return the specified linguistic feature of a span with one more more tokens. 
-    
+
     If ``pattern`` is provided, it is used to filter and get the sub-list of spans in the span list.
     For example, if ``pattern=="NOUN"``, then the overlap will only be on tokens with a ``NOUN`` tag.
-    
+
     If ``get_root==True``, gets the single linguistic feature of the *primary* token, 
     or the one within the ground truth span that is highest in the dependency parsing tree.
 
     *When using the DSL parser*, this function can be called in the following alternative ways, 
     with ``label`` being automatically filled in: ``[LEMMA|POS|TAG|ENT](spans, pattern, get_root)``.
-    
+
     Parameters
     ----------
     spans : Union[Target, Span]
@@ -116,16 +116,17 @@ def linguistic(
         If to get the single linguistic feature of the *primary* token, by default False
     get_most_common : bool, optional
         If to get the most frequently occurred linguistic feature, by default False
-    
+
     Returns
     -------
     Union[str, List[str]]
         The linguistic feature, or feature list if (1) multiple spans are given, and 
         (2) `get_root` and `get_most_common` are both false.
-    """    
-    output = ""
+    """
+    output = "NONE"
     try:
         NOT_INCLUDE_POS = ['ADP', 'IN', 'RP', 'RB', 'DET', 'CONJ', 'PUNCT', 'CCONJ', 'PART', 'SCONJ', 'SYM']
+
         def linguistic_ent_(span):
             if not span:
                 return None
@@ -153,7 +154,7 @@ def linguistic(
                 if count < len(span) * 0.5:
                     return None
                 return feature
-            else: 
+            else:
                 return ents
 
         def linguistic_(span):
@@ -171,8 +172,8 @@ def linguistic(
                 elif type(span) == Span:
                     span = span.root
                 else:
-                    return None                
-            # convert to list            
+                    return None
+            # convert to list
             if type(span) == Token:
                 return get_token_feature(span, label.lower())
             span_list = convert_list(list(span))
@@ -193,36 +194,36 @@ def linguistic(
                 # get the most frequently occurring linguistic feature
                 feature, _ = c.most_common()[0]
                 return feature
-            else: 
+            else:
                 return token_features
-        
+
         # first, transfer span if have pattern.
         spans = token_pattern(spans, pattern=pattern)
         if type(spans) == list:
             if label.startswith('ent'):
-                linguistics = [ linguistic_ent_(span) for span in spans ] 
+                linguistics = [linguistic_ent_(span) for span in spans] 
             else:
-                linguistics = [ linguistic_(span) for span in spans ]
+                linguistics = [linguistic_(span) for span in spans]
             linguistics = [l for l in linguistics if l]
             if len(linguistics) == 1:
                 output = linguistics[0]
             else:
-                output = linguistics # convert_token
+                output = linguistics  # convert_token
         else:
-            output = linguistic_ent_(spans) if label.startswith('ent') else linguistic_(spans) # convert_token
+            output = linguistic_ent_(spans) if label.startswith('ent') else linguistic_(spans)  # convert_token
     except DSLValueError as e:
         logger.error(e)
         raise(e)
     except Exception as e:
         #print(f'[is_digit]')
-        #traceback.print_exc()
+        traceback.print_exc()
         ex = Exception(f"Unknown exception from [ linguistic ({label}) ]: {e}")
-        #logger.error(ex)
+        logger.error(ex)
         raise(ex)
     #finally:
     else:
-        #pass
         return output
+
 
 for ling in ["lemma", "ent_type", "pos", "tag", "dep", "orth"]:
     PrimFunc.register(ling.upper())(functools.partial(linguistic, label=ling))

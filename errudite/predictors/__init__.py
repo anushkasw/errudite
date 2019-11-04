@@ -2,6 +2,7 @@ from .predictor import Predictor
 from .qa.predictor_qa import PredictorQA
 from .nli.predictor_nli import PredictorNLI
 from .sentiment_analysis.predictor_sentiment_analysis import PredictorSA
+from .re.predictor_re import PredictorRE
 
 
 try:

@@ -1,9 +1,12 @@
-from spacy.tokens import Token, Doc
 from typing import List, Dict, Union, Any
+
 from collections import defaultdict
+
+from spacy.tokens import Token, Doc
 from ..processor import SpacyAnnotator, spans_to_json, span_to_json, spacy_annotator
 from .interfaces import InstanceKey
 from ..utils.check import DSLValueError
+
 
 class Target(object):
     """
@@ -24,12 +27,12 @@ class Target(object):
     metas : Dict[str, any], optional
         Additional metas associated with a target, in the format of {key: value}, by default {}
     """
-    def __init__(self, 
-        qid: str, 
-        text: str, 
-        vid: int=0, 
-        annotator: SpacyAnnotator=None, 
-        metas: Dict[str, any]={}) -> None:
+    def __init__(self,
+                 qid: str,
+                 text: str,
+                 vid: int = 0,
+                 annotator: SpacyAnnotator = None,
+                 metas: Dict[str, any] = None) -> None:
         self.qid: str = qid
         self.vid: int = vid
         # this is a spacy.Doc instance
@@ -39,7 +42,7 @@ class Target(object):
             self.doc: Doc = annotator.model(text)
         else:
             self.doc = None
-        self.metas = metas
+        self.metas = metas or {}
     
     def get_text(self) -> str:
         """Get the text associated with the target.

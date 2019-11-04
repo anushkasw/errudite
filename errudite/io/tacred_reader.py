@@ -13,7 +13,7 @@ from ..utils import ConfigurationError, normalize_file_path, accuracy_score
 from ..targets.instance import Instance
 from ..targets.relation_extraction import BinaryRelation
 from ..targets.label import Label, PredefinedLabel
-from ..processor import SpacyAnnotator
+from ..processor import SpacyAnnotator, spacy_annotator
 
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -41,7 +41,7 @@ class TACREDReader(DatasetReader):
     * target entries in an instance: text, predictions, groundtruth.
 
     This can be queried via:
-    
+
     .. code-block:: python
 
         from errudite.io import DatasetReader
@@ -50,8 +50,9 @@ class TACREDReader(DatasetReader):
     def __init__(self, cache_folder_path: str = None) -> None:
         super().__init__(cache_folder_path)
         Label.set_task_evaluator(accuracy_score, 'accuracy')
-        self.spacy_annotator = SpacyAnnotator(pre_tokenized=True)
-    
+        self.spacy_annotator = SpacyAnnotator(pre_tokenized=True,
+                                              disable=["tagger", "parser", "ner", "textcat"])
+
     @overrides
     def _read(self, file_path: str, lazy: bool, sample_size: int):
         instances = []
@@ -60,14 +61,14 @@ class TACREDReader(DatasetReader):
         with open(normalize_file_path(file_path), "r") as data_file:
             logger.info("Reading TACRED instances from json dataset at: %s", file_path)
             data = json.load(data_file)
-            for idx, example in enumerate(data):
+            for idx, example in enumerate(data, start=1):
                 if lazy:
                     texts.append(" ".join([normalize_glove(token) for token in example["token"]]))
                 else:
                     instance = self._text_to_instance(example)
                     if instance is not None:
                         instances.append(instance)
-                    if sample_size and idx > sample_size:
+                    if sample_size and idx >= sample_size:
                         break
         if lazy:
             return {"text": texts}
@@ -96,6 +97,12 @@ class TACREDReader(DatasetReader):
                               text=tokens,
                               head=head,
                               tail=tail,
+                              head_type=head_type,
+                              tail_type=tail_type,
+                              ner=ner,
+                              pos=pos,
+                              dep=dep,
+                              dep_heads=dep_heads,
                               vid=0,
                               annotator=self.spacy_annotator)
         # label

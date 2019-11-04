@@ -1,23 +1,20 @@
 from typing import Dict
-import traceback
-import numpy as np
+
+import torch
 from allennlp.models.archival import load_archive
 from allennlp.predictors.predictor import Predictor as AllenPredictor
 from .predictor import Predictor
-import torch
 
-# bidaf-model-2017.08.31.tar.gz
-# bidaf-model-2017.09.15-charpad.tar.gz
 
 class PredictorAllennlp(Predictor):
-    def __init__(self, name: str, 
-        model_path: str=None,
-        model_online_path: str=None,
-        description: str='',
-        model_type: str=None) -> None:
+    def __init__(self,
+                 name: str,
+                 model_path: str = None,
+                 description: str = "",
+                 model_type: str = None) -> None:
         """A class specifically created for wrapping the predictors from 
         Allennlp: https://allenai.github.io/allennlp-docs/api/allennlp.predictors.html
-        
+
         Parameters
         ----------
         name : str
@@ -31,25 +28,20 @@ class PredictorAllennlp(Predictor):
             A sentence describing the predictor., by default ''
         model_type : str, optional
             The model type as used in Allennlp, by default None
-        
+
         Returns
         -------
         None
         """
         model = None
-        model_path = model_path or model_online_path
-        if model_path:
-            if torch.cuda.is_available():
-                archive = load_archive(model_path, cuda_device=0)
-            else:    
-                archive = load_archive(model_path)
-            model = AllenPredictor.from_archive(archive, model_type)
+        if torch.cuda.is_available():
+            archive = load_archive(model_path, cuda_device=0)
+        else:
+            archive = load_archive(model_path)
+        model = AllenPredictor.from_archive(archive, model_type)
         self.predictor = model
         Predictor.__init__(self, name, description, model, ['accuracy'])
 
     def _predict_json(self, **inputs) -> Dict[str, float]:
-        try:
-            predicted = self.predictor.predict_json(inputs)
-            return predicted
-        except:
-            raise
+        predicted = self.predictor.predict_json(inputs)
+        return predicted

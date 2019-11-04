@@ -1,18 +1,21 @@
-import os
 from typing import Dict, List, Tuple, Callable, Union
+
+import logging
+import os
+
 from ..build_blocks.wrapper import BuildBlockWrapper
 from ..targets.interfaces import InstanceKey
 from ..targets.instance import Instance
 from ..utils import DSLValueError, Store, CACHE_FOLDERS, dump_json
-import logging
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 from ..utils import str_to_func, func_to_str
+
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 class BuiltBlock(Store):
     """
     A wrapping class for Groups and Attributes.
-        
+
     Parameters
     ----------
     name : str
@@ -20,12 +23,12 @@ class BuiltBlock(Store):
     description : str
         The description of the attribute/group.
     cmd : Union[str, Callable]
-        The command that extracts attributes from instances / 
+        The command that extracts attributes from instances /
         filter instances to form groups.
         If it's a string, it's parsed by the DSL to actual functions.
-        If the input is a function already, it's directly called 
+        If the input is a function already, it's directly called
         to get the attribute.
-    
+
     Attributes
     ----------
     instance_dict : Dict[InstanceKey, Union[bool, float, str]]

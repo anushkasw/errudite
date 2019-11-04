@@ -65,11 +65,11 @@ class SpacyAnnotator(object):
         disable = disable or []
         self.model = SpacyAnnotator.load_lang_model(lang, disable=disable)
         # special cases 
-        self.model.tokenizer.add_special_case(u"[TLE]", _build_special_case_rule("[TLE]"))
-        self.model.tokenizer.add_special_case(u"[DOC]", _build_special_case_rule("[DOC]"))
-        self.model.tokenizer.add_special_case(u"[PAR]", _build_special_case_rule("[PAR]"))
-        self.model.tokenizer.add_special_case(u"</P>", _build_special_case_rule("</P>"))
-        self.model.tokenizer.add_special_case(u"<P>", _build_special_case_rule("<P>"))
+        # self.model.tokenizer.add_special_case(u"[TLE]", _build_special_case_rule("[TLE]"))
+        # self.model.tokenizer.add_special_case(u"[DOC]", _build_special_case_rule("[DOC]"))
+        # self.model.tokenizer.add_special_case(u"[PAR]", _build_special_case_rule("[PAR]"))
+        # self.model.tokenizer.add_special_case(u"</P>", _build_special_case_rule("</P>"))
+        # self.model.tokenizer.add_special_case(u"<P>", _build_special_case_rule("<P>"))
         self.load()
         if use_whitespace:
             self.model.tokenizer = WhitespaceTokenizer(self.model.vocab)
@@ -88,27 +88,25 @@ class SpacyAnnotator(object):
         if vocab:
             self.model.vocab.from_bytes(vocab)
 
-    
     def process_text(self, sentence: str) -> Doc: 
         """Annotate a sentence with spacy
-        
+
         Arguments:
             sentence {str} -- a string sentence
-        
+
         Returns:
             Doc -- Annotated.
         """
         return self.model(sentence)
-    
 
     def remove_stopwords(self, sentence_str: str=None, tokens: List[Token]=None, use_lemma: bool=True) -> str:
         """Function which gets a normalized string of the sentence and removes stop words
-        
+
         Keyword Arguments:
             sentence_str {str} -- input sentence string (default: {None})
             tokens {List[Token]} -- pre-computed token list, with feature added (default: {None})
             use_lemma {bool} -- return the lemma or the text (default: {True})
-        
+
         Returns:
             str -- the str with stopwords removed
         """
@@ -121,9 +119,6 @@ class SpacyAnnotator(object):
         attr = 'lemma_' if use_lemma else 'text' # what to merge
         return ' '.join([ getattr(token, attr) for token in tokens
             if not token.is_punct and token.text not in STOP_WORDS and token.lemma_ not in STOP_WORDS])
-
-
-
 
     @staticmethod
     def is_package(name: str):
@@ -148,10 +143,10 @@ class SpacyAnnotator(object):
     def model_installed(name: str):
         """Check if spaCy language model is installed
         From https://github.com/explosion/spaCy/blob/master/spacy/util.py
-        
+
         Arguments:
             name {str} -- Name of package
-        
+
         Returns:
             [bool] -- True if installed package, False if not.
         """
@@ -165,22 +160,22 @@ class SpacyAnnotator(object):
         if Path(name).exists(): # path to model data directory
             return True
         return False
-    
+
     @staticmethod
     def load_lang_model(lang: str, disable: List[str]):
         """Load spaCy language model or download if
             model is available and not installed
-        
+
         Arguments:
             lang {str} -- language
             disable {List[str]} -- If only using tokenizer, can disable ['parser', 'ner', 'textcat']
-        
+
         Returns:
             [type] -- [description]
         """
         if 'coref' in lang:
             try:
-                return spacy.load(lang, disable=disable) # 
+                return spacy.load(lang, disable=disable)
             except Exception as e:
                 return SpacyAnnotator.load_lang_model(lang.split('_')[0], disable=disable)
         try:

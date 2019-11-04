@@ -1,47 +1,48 @@
+from typing import List, Dict, Callable
+
+import logging
 import traceback
 import re
-import numpy as np
 import inspect
-from typing import List, Dict, Callable
 from collections import defaultdict
+
+import numpy as np
 from .definitions import conditions as defConditions
 from .operators import OpNode, OpNodeReturn
-
 from ..targets.instance import Instance
 from ..targets.interfaces import InstanceKey, UNREWRITTEN_RID
-
 from ..utils.check import DSLValueError
-import logging
+
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class BuildBlockWrapper(object):
     def __init__(self):
         self.operator: OpNode = None
         self.cmd_type: str = ''
-    
+
     def normalize_cmd(self, cmd):
         cmd = re.sub(r'[\n\t]+', ' ', cmd)
         cmd = re.sub(r'[\'|\“|\”]', '"', cmd)
         cmd = re.sub(r'[\']', '"', cmd)
         return cmd
-    
+
     def _parse_cmd_func(self, cmd: Callable):
         if "rewrite_type" in inspect.signature(cmd).parameters:
             rewrite_type = inspect.signature(cmd).parameters["rewrite_type"].default
         else:
             rewrite_type = UNREWRITTEN_RID
         rewrite_type = Instance.resolve_default_rewrite(rewrite_type)
+
         def test_func(instance_group, **kwargs):
             try:
                 instance = instance_group[rewrite_type]
-                return OpNodeReturn(
-                    key=[ instance.key() ],
-                    value=cmd(instance, **kwargs))
+                return OpNodeReturn(key=[instance.key()],
+                                    value=cmd(instance, **kwargs))
             except Exception as e:
-                ex = DSLValueError(f"Unknown exception caught in [ {cmd.__name__} ]: {e}")
+                ex = DSLValueError(f"Unknown exception caught in [{cmd.__name__}]: {e}")
                 raise(ex)
         return test_func
-
 
     def parse_cmd_to_operator(self, cmd: str, cmd_type: str) -> None:
         """Parse the str cmd into an operator
@@ -57,14 +58,14 @@ class BuildBlockWrapper(object):
             try:
                 cmd = self.normalize_cmd(cmd)
                 parsed = defConditions.parseString(cmd)["conditions"]
-                if isinstance(parsed, OpNode): 
+                if isinstance(parsed, OpNode):
                     return parsed
                 elif parsed in Instance.instance_entries + ['groundtruth', 'prediction']:
                     return parsed
                 else:
                     raise DSLValueError(f"Invalid parsing: [ {cmd} ]. {cmd_type} not correctly created!")
             except:
-                #traceback.print_exc()
+                traceback.print_exc()
                 raise DSLValueError(f"Invalid parsing: [ {cmd} ]. {cmd_type} not correctly created!")
         try:
             if not cmd:

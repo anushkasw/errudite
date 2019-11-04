@@ -92,8 +92,8 @@ def get_token_feature(t: Token, label: str) -> str:
         str -- linguistic feature
     """
 
-    if label in ['text', 'orth']:
+    if label in ["text", "orth"]:
         return t.text
-    if label.lower() == 'ent':
-        label = 'ent_type'
-    return getattr(t, '{}_'.format(label.lower()), '')
+    if label.lower() == "ent":
+        label = "ent_type"
+    return getattr(t, "{}_".format(label.lower()), "")

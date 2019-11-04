@@ -62,6 +62,7 @@ def convert_doc(doc: Union[Doc, Span, 'Target'], strict_format: str=None):
         if strict_format == 'span':
             return doc if type(doc) == Span else doc[:]
         return doc
+
     def _convert(doc):
         if type(doc) == str:
             return doc
@@ -72,6 +73,6 @@ def convert_doc(doc: Union[Doc, Span, 'Target'], strict_format: str=None):
     if not doc:
         return None
     if type(doc) == list:
-        return [ _convert(d) for d in doc ]
+        return [_convert(d) for d in doc]
     else:
         return _convert(doc)
