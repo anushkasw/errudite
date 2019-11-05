@@ -22,7 +22,7 @@ T = TypeVar('T')
 
 class Rewrite(Registrable, Store):
     """The base class for rewrite rules.
-        
+
     Parameters
     ----------
     rid : str
@@ -196,12 +196,12 @@ class Rewrite(Registrable, Store):
 
     def rewrite_one_instance(self, instance: Instance) -> RewriteOutputMeta:
         """Rewrite an instance.
-        
+
         Parameters
         ----------
         instance : Instance
             The instance to be rewritten.
-        
+
         Returns
         -------
         RewriteOutputMeta

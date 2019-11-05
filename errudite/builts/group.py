@@ -218,12 +218,13 @@ class Group(BuiltBlock):
             'counts': stats['counts'],
             'stats': stats['stats']
         }
-    
+
     def visualize_models(self,
                          instance_hash: Dict[InstanceKey, Instance] = None,
                          instance_hash_rewritten: Dict[InstanceKey, Instance] = None,
                          filtered_instances: List[InstanceKey] = None,
                          models: List[str] = None,
+                         normalize: bool = False,
                          altair_args: Dict[str, Any] = None):
         """
         Visualize the group distribution.
@@ -271,10 +272,11 @@ class Group(BuiltBlock):
                     "model": model
                 })
 
+        stack = "normalize" if normalize else "zero"
         df = pd.DataFrame(output)
         chart = alt.Chart(df).mark_bar().encode(
             y=alt.Y('model:N'),
-            x=alt.X('count:Q', stack="zero"),
+            x=alt.X('count:Q', stack=stack),
             color=alt.Color('correctness:N', scale=alt.Scale(domain=["correct", "incorrect"])),
             tooltip=['model:N', 'count:Q', 'correctness:N']
         ).properties(**altair_args)#.configure_facet(spacing=5)#
