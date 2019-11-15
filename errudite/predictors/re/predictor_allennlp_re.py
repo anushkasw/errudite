@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, List, Optional
+from typing import Dict, Tuple, List, Optional, Any
 
 import numpy as np
 from .predictor_re import PredictorRE
@@ -21,12 +21,14 @@ class PredictorREAllenNLP(PredictorRE, PredictorAllennlp, Predictor):
                  model_path: str = None,
                  description: str = "",
                  model_type: str = None,
-                 label_namespace: str = "labels") -> None:
+                 label_namespace: str = "labels",
+                 overrides: Dict[str, Any] = None) -> None:
         PredictorAllennlp.__init__(self,
                                    name=name,
                                    model_path=model_path,
                                    description=description,
-                                   model_type=model_type)
+                                   model_type=model_type,
+                                   overrides=overrides)
         PredictorRE.__init__(self, name, description, self.predictor)
         token_to_index = self.predictor._model.vocab.get_token_to_index_vocabulary(label_namespace)
         self.index_to_label = {i: l for l, i in token_to_index.items()}

@@ -1,5 +1,6 @@
-from typing import Dict
+from typing import Dict, Any
 
+import json
 import torch
 from allennlp.models.archival import load_archive
 from allennlp.predictors.predictor import Predictor as AllenPredictor
@@ -11,7 +12,8 @@ class PredictorAllennlp(Predictor):
                  name: str,
                  model_path: str = None,
                  description: str = "",
-                 model_type: str = None) -> None:
+                 model_type: str = None,
+                 overrides: Dict[str, Any] = None) -> None:
         """A class specifically created for wrapping the predictors from 
         Allennlp: https://allenai.github.io/allennlp-docs/api/allennlp.predictors.html
 
@@ -33,11 +35,12 @@ class PredictorAllennlp(Predictor):
         -------
         None
         """
+        overrides = overrides or {}
         model = None
         if torch.cuda.is_available():
-            archive = load_archive(model_path, cuda_device=0)
+            archive = load_archive(model_path, cuda_device=0, overrides=json.dumps(overrides))
         else:
-            archive = load_archive(model_path)
+            archive = load_archive(model_path, overrides=json.dumps(overrides))
         model = AllenPredictor.from_archive(archive, model_type)
         self.predictor = model
         Predictor.__init__(self, name, description, model, ['accuracy'])

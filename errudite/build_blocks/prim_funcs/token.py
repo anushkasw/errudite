@@ -60,9 +60,9 @@ def token_pattern(
     else:
         return output
 
-def token_idxes(
-    docs: Union[Doc, Span, 'Target', List],
-    idxes: Union[int, List[int]]=None) -> Union[Doc, Span, Token]: 
+
+def token_idxes(docs: Union[Doc, Span, 'Target', List],
+                idxes: Union[int, List[int]] = None) -> Union[Doc, Span, Token]:
     # TODO: decide if we want the token to be involved?
     output = []
     try:
@@ -112,16 +112,16 @@ def token_idxes(
         #pass
         return output
 
+
 @PrimFunc.register()
-def token(
-    docs: Union[Span, 'Target'],
-    idxes: Union[int, List[int]]=None,
-    pattern: Union[str, List[str]]=None) -> Union[Span, Token]:
+def token(docs: Union[Span, 'Target'],
+          idxes: Union[int, List[int]] = None,
+          pattern: Union[str, List[str]] = None) -> Union[Span, Token]:
     """
-    Get a list of tokens from the target based on idxes (sub-list) and 
+    Get a list of tokens from the target based on idxes (sub-list) and
     pattern. Note that ``idxes`` runs before ``pattern``. 
     That is, if the idxes exist, the pattern filters the idxed doc tokens.
-    
+
     Parameters
     ----------
     docs : Union[Target, Span]
@@ -135,7 +135,7 @@ def token(
         ``(what, which) NOUN)`` may query all docs that have ``what NOUN`` or 
         ``which NOUN``. If a list, then all the patterns in a list are "OR".
         By default None
-    
+
     Returns
     -------
     Union[Span, Token]
@@ -145,7 +145,7 @@ def token(
     try:
         if not docs:
             raise DSLValueError("No input to [ token ].")
-        docs_ = token_idxes(docs, idxes=idxes)
+        docs_ = token_idxes(docs, idxes=idxes) if idxes is not None else docs
         if pattern:
             output = token_pattern(docs_, pattern)
         else:
@@ -161,6 +161,7 @@ def token(
     else:
         return output
 
+
 @PrimFunc.register()
 def has_pattern(
     docs: Union[Doc, Span, 'Target', List],
@@ -168,7 +169,7 @@ def has_pattern(
     pattern: Union[str, List[str]]=None) -> bool:
     """
     To determine whether the targeted span contains a certain pattern.
-    
+
     Parameters
     ----------
     docs : Union[Target, Span]
@@ -182,7 +183,7 @@ def has_pattern(
         ``(what, which) NOUN)`` may query all docs that have "what NOUN" or 
         "which NOUN". If a list, then all the patterns in a list are "OR".
         By default None
-    
+
     Returns
     -------
     bool
@@ -208,6 +209,7 @@ def has_pattern(
     #finally:
     else:
         return output
+
 
 def boundary_with (
     docs: Union[Span, 'Target'],
@@ -260,6 +262,7 @@ def boundary_with (
         raise(ex)
     else:
         return output
+
 
 PrimFunc.register("starts_with")(functools.partial(boundary_with, direction='start'))
 PrimFunc.register("ends_with")(functools.partial(boundary_with, direction='end'))

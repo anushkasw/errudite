@@ -200,7 +200,7 @@ class Instance(object):
             return groundtruths[0] if groundtruths else None
         elif entry == 'prediction':
             predictions = getattr(self, 'predictions', [])
-            predictions = [ p for p in predictions if p.model == Instance.resolve_default_model(model) ]
+            predictions = [p for p in predictions if p.model == Instance.resolve_default_model(model)]
             return predictions[0] if predictions else None
         # logger.warn(f"Cannot get the target entry: [ {entry} ] Returning None.")
         return None

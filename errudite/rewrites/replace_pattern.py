@@ -1,33 +1,27 @@
-import functools
-from typing import List, Dict
-from spacy.tokens import Token
-from spacy.matcher import Matcher # pylint: disable=E0611
+from typing import List
 
+import functools
 import difflib
 from spacy.tokens import Token, Doc, Span
-from pattern.en import referenced # pylint: disable=E0401,E0611
+from spacy.matcher import Matcher  # pylint: disable=E0611
+from pattern.en import referenced  # pylint: disable=E0401,E0611
 
 from .rewrite import Rewrite
 from ..targets.instance import Instance
 from .helpers import match_super, get_str_from_pattern, sequence_matcher, change_matched_token_form
-from ..utils import convert_doc, convert_list, merge_list
-    
-from ..utils import str_to_func, func_to_str
-
-#from backend.utils.helpers import convert_list
-#from backend.build_block.prim_funcs.overlap import overlap
-
+from ..utils import convert_doc, convert_list, merge_list, str_to_func, func_to_str
 from ..build_blocks.prim_funcs.pattern_parser_operators import \
     matcher, parse_cmd, CUR_SAVED_RULE
 from ..processor import spacy_annotator
 from ..targets.interfaces import PatternMeta, OpcodeMeta
+
 
 @Rewrite.register("ReplacePattern")
 class ReplacePattern (Rewrite):
     """
     A rule that rewrites the target_cmd part of an instance 
     by replacing from_cmd with to_cmd. The rid is: ``{from_cmd} -> {to_cmd}``.
-    
+
     Both from_cmd and to_cmd can include linguistic annotations, in ALL CAPS.
     For example, you can input ``from_cmd="what NOUN"``, and ``to_cmd="which NOUN"``.
     If no linguistic annotation, this will automatically switch to  
@@ -37,7 +31,7 @@ class ReplacePattern (Rewrite):
 
         from errudite.rewrites import Rewrite
         Rewrite.by_name("ReplacePattern")
-        
+
     Parameters
     ----------
     from_cmd : str, optional
@@ -51,23 +45,24 @@ class ReplacePattern (Rewrite):
         by default 'context'
     """
     def __init__(self,
-        from_cmd: str='',
-        to_cmd: str='',
-        description: str='Change one pattern to another.',
-        target_cmd: str='context', **kwargs):
+                 from_cmd: str = "",
+                 to_cmd: str = "",
+                 description: str = "Change one pattern to another.",
+                 target_cmd: str = "context",
+                 **kwargs):
         rid = f'{from_cmd} -> {to_cmd}'
         Rewrite.__init__(self, rid, 'auto', description, target_cmd)
         self.from_cmd = str_to_func(from_cmd)
         self.to_cmd = str_to_func(to_cmd)
         self.matcher = Matcher(spacy_annotator.model.vocab)
-        
+
         if self.from_cmd and self.to_cmd:
             self.pattern = PatternMeta(
                 before=self.cmd_to_pattern(self.from_cmd),
                 after=self.cmd_to_pattern(self.to_cmd)
             )
             self.ops = self._get_rewrite_ops(self.pattern)
-    
+
     def get_json(self):
         return {
             'rid': self.rid,
@@ -108,7 +103,7 @@ class ReplacePattern (Rewrite):
             key_arr.append([keys[0], val])
         return key_arr
 
-    def cmd_to_pattern (self, pattern_cmd: str):
+    def cmd_to_pattern(self, pattern_cmd: str):
         if not pattern_cmd:
             return None
         pattern_cmd = convert_list(pattern_cmd)
@@ -120,8 +115,8 @@ class ReplacePattern (Rewrite):
         except Exception as e:
             print(e)
             pass
-    
-    def pattern_to_cmd (self, pattern: PatternMeta):
+
+    def pattern_to_cmd(self, pattern: PatternMeta):
         from_cmd = ' '.join([v[1] for v in self.convert_one_pattern(pattern.before)])
         to_cmd = ' '.join([v[1] for v in self.convert_one_pattern(pattern.after)])
         return from_cmd, to_cmd
@@ -154,9 +149,8 @@ class ReplacePattern (Rewrite):
                         op=o.op, 
                         fromIdxes=[cur_from_idx, o.fromIdxes[1] - o.fromIdxes[0] + cur_from_idx], 
                         toIdxes=[cur_to_idx, o.toIdxes[1] - o.toIdxes[0] + cur_to_idx]))
-            
+
             return output_refactored
-    
 
     def get_match_func(self, pattern):
         def _on_match_rewrite(matcher, doc, i, matches, pattern):
@@ -239,7 +233,7 @@ class ReplacePattern (Rewrite):
             return True
         else:
             return False
-   
+
     def _rewrite_target(self, instance) -> str:
         if not self.add_matcher():
             return None

@@ -1,2 +1,3 @@
 from .predictor_re import PredictorRE
 from .predictor_allennlp_re import PredictorREAllenNLP
+from .predictor_allennlp_re_knowbert import PredictorREAllenNLPKnowBert

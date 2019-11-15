@@ -45,6 +45,13 @@ class BinaryRelation(Target):
         self.head_type = head_type
         self.tail_type = tail_type
 
+        self.ner = ner
+        self.pos = pos
+        self.dep = dep
+        self.dep_heads = dep_heads
+
+        self.annotator = annotator
+
         vocab = annotator.model.vocab
 
         words = text
