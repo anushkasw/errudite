@@ -19,8 +19,8 @@ en_nlp = spacy.load('en_core_web_sm')
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
-@DatasetReader.register("darkT")
-class darkTReader(DatasetReader):
+@DatasetReader.register("darkt")
+class DARKTReader(DatasetReader):
     """
     This loads the data from TACRED Corpus:
     https://nlp.stanford.edu/projects/tacred/
