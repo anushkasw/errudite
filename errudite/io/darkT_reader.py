@@ -14,25 +14,13 @@ from ..targets.instance import Instance
 from ..targets.relation_extraction import BinaryRelation
 from ..targets.label import Label, PredefinedLabel
 from ..processor import SpacyAnnotator, spacy_annotator
-
-
+import spacy
+en_nlp = spacy.load('en_core_web_sm')
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
-def normalize_glove(token):
-    mapping = {
-            "-LRB-": "(",
-            "-RRB-": ")",
-            "-LSB-": "[",
-            "-RSB-": "]",
-            "-LCB-": "{",
-            "-RCB-": "}",
-    }
-    return mapping.get(token, token)
-
-
-@DatasetReader.register("tacred")
-class TACREDReader(DatasetReader):
+@DatasetReader.register("darkT")
+class darkTReader(DatasetReader):
     """
     This loads the data from TACRED Corpus:
     https://nlp.stanford.edu/projects/tacred/
@@ -45,7 +33,7 @@ class TACREDReader(DatasetReader):
     .. code-block:: python
 
         from errudite.io import DatasetReader
-        DatasetReader.by_name("tacred")
+        DatasetReader.by_name("darkT")
     """
     def __init__(self, cache_folder_path: str = None) -> None:
         super().__init__(cache_folder_path)
@@ -59,11 +47,12 @@ class TACREDReader(DatasetReader):
         texts = []
         logger.info("Reading instances from lines in file at: %s", file_path)
         with open(normalize_file_path(file_path), "r") as data_file:
-            logger.info("Reading TACRED instances from json dataset at: %s", file_path)
-            data = json.load(data_file)
+            logger.info("Reading DT instances from text dataset at: %s", file_path)
+            data = data_file.readlines()
+
             for idx, example in enumerate(data, start=1):
                 if lazy:
-                    texts.append(" ".join([normalize_glove(token) for token in example["token"]]))
+                    texts.append(example[3])
                 else:
                     instance = self._text_to_instance(example)
                     if instance is not None:
@@ -77,38 +66,23 @@ class TACREDReader(DatasetReader):
 
     @overrides
     def _text_to_instance(self, example: Dict[str, Any]) -> Instance:  # type: ignore
-        tokens = [normalize_glove(token) for token in example["token"]]
+        doc = en_nlp(example[3])
+        tokens = [token.text for token in doc]
 
         # TACRED entity span indices are inclusive, we need the end index to be exclusive
-        head = (example["subj_start"], example["subj_end"] + 1)
-        tail = (example["obj_start"], example["obj_end"] + 1)
-        head_type = example["subj_type"]
-        tail_type = example["obj_type"]
-        relation = example["relation"]
-
         id_ = example.get("id")
-        ner = example.get("stanford_ner")
-        pos = example.get("stanford_pos")
-        dep = example.get("stanford_deprel")
-        dep_heads = example.get("stanford_head")
 
         # target
         text = BinaryRelation(qid=id_,
                               text=tokens,
-                              head=head,
-                              tail=tail,
-                              head_type=head_type,
-                              tail_type=tail_type,
-                              ner=ner,
-                              pos=pos,
-                              dep=dep,
-                              dep_heads=dep_heads,
+                              pos=[token.pos_ for token in doc],
+                              dep=[token.dep_ for token in doc],
                               vid=0,
                               annotator=self.spacy_annotator)
         # label
         groundtruth = PredefinedLabel(model="groundtruth",
                                       qid=id_,
-                                      text=relation,
+                                      text=example[1],
                                       vid=0)
 
         return self.create_instance(id_,
