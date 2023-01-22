@@ -4,4 +4,4 @@ from .snli_reader import SNLIReader
 from .squad_reader import SQUADReader
 from .mrqa_reader import MRQAReader
 from .tacred_reader import TACREDReader
-from .darkt_reader import DARKTReader
+from .darkT_reader import DARKTReader
